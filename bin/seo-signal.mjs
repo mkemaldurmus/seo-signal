@@ -4,8 +4,8 @@
 // ../scripts, run as a child process with the arguments passed straight
 // through — the scripts stay independently runnable and keep their own --help.
 
-import { spawn } from 'node:child_process'
-import { writeFileSync, existsSync, readFileSync } from 'node:fs'
+import { spawn, execFileSync } from 'node:child_process'
+import { writeFileSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -44,15 +44,57 @@ const COMMANDS = {
 
 const CONFIG_FILE = 'seo-signal.config.json'
 
-const STARTER_CONFIG = {
-  site: 'https://example.com',
-  gscProperty: 'sc-domain:example.com',
-  gcpQuotaProject: '',
-  contentDir: 'public',
-  brandTerms: [],
-  topicTokens: [],
-  extraFeeds: [],
-  excludeFromSitemap: [],
+// Where static site generators put built HTML, roughly in order of how likely
+// a hit is to be the real thing.
+const LIKELY_CONTENT_DIRS = ['public', 'dist', 'build', '_site', 'out', 'site', 'docs', 'www']
+
+function countHtml(dir) {
+  try {
+    if (!statSync(dir).isDirectory()) return 0
+    return readdirSync(dir).filter((f) => f.endsWith('.html')).length
+  } catch {
+    return 0
+  }
+}
+
+// Guessing beats defaulting to "public" and then failing on the very next
+// command the init message tells you to run.
+function detectContentDir() {
+  const found = LIKELY_CONTENT_DIRS
+    .map((d) => ({ dir: d, count: countHtml(d) }))
+    .filter((x) => x.count > 0)
+    .sort((a, b) => b.count - a.count)
+  if (found.length) return found[0]
+  // A site whose pages sit at the repo root is unusual but real.
+  const rootCount = countHtml('.')
+  return rootCount > 0 ? { dir: '.', count: rootCount } : null
+}
+
+// A git remote is the best guess available for the site, and gets the user one
+// field closer to a working config.
+function detectSite() {
+  try {
+    const url = execFileSync('git', ['remote', 'get-url', 'origin'], {
+      encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+    const repo = url.replace(/\.git$/, '').split(/[:/]/).pop()
+    const owner = url.replace(/\.git$/, '').split(/[:/]/).slice(-2)[0]
+    if (owner && repo) return `https://${owner}.github.io/${repo}`
+  } catch { /* not a repo, or no origin */ }
+  return ''
+}
+
+function starterConfig({ contentDir, site }) {
+  return {
+    site: site || 'https://example.com',
+    gscProperty: site ? `sc-domain:${new URL(site).hostname}` : 'sc-domain:example.com',
+    gcpQuotaProject: '',
+    contentDir: contentDir || 'public',
+    brandTerms: [],
+    topicTokens: [],
+    extraFeeds: [],
+    excludeFromSitemap: [],
+  }
 }
 
 function usage() {
@@ -76,11 +118,26 @@ function init() {
     console.error(`current site: ${JSON.parse(readFileSync(target, 'utf8')).site || '(unset)'}`)
     process.exit(1)
   }
-  writeFileSync(target, `${JSON.stringify(STARTER_CONFIG, null, 2)}\n`)
+
+  const detected = detectContentDir()
+  const site = detectSite()
+  writeFileSync(target, `${JSON.stringify(starterConfig({ contentDir: detected?.dir, site }), null, 2)}\n`)
   console.error(`wrote ${CONFIG_FILE}`)
-  console.error('\nNext: set "site" and "contentDir", then try')
-  console.error('  npx seo-signal staleness')
-  console.error('which needs no credentials at all.')
+
+  if (detected) {
+    console.error(`  contentDir: ${detected.dir}/  (${detected.count} html file${detected.count === 1 ? '' : 's'} found)`)
+    if (site) console.error(`  site:       ${site}  — a guess from your git remote, change it if wrong`)
+    console.error('\nTry this now, it needs no credentials:')
+    console.error('  npx seo-signal staleness')
+    if (!site) console.error('\nSet "site" before anything that talks to a search engine.')
+  } else {
+    // Say so plainly rather than writing a config whose next command fails.
+    console.error(`\nNo HTML found in ${LIKELY_CONTENT_DIRS.slice(0, 4).join('/, ')}/ or here,`)
+    console.error('so "contentDir" is a placeholder. Point it at your built pages:')
+    console.error(`  ${CONFIG_FILE} -> "contentDir": "<your build output>"`)
+    console.error('\nIf you are just trying this out, build your site first — these')
+    console.error('commands read the HTML you actually ship, not your source files.')
+  }
 }
 
 const [command, ...rest] = process.argv.slice(2)

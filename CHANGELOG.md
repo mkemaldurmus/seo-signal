@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.3
+
+- `init` detects your content directory instead of writing `public` and hoping.
+  It scans the usual build outputs (`public`, `dist`, `build`, `_site`, `out`,
+  `site`, `docs`, `www`, then the repo root), picks the one with the most HTML,
+  and guesses `site` from your git remote.
+- When there is no HTML anywhere, `init` now says so and stops, rather than
+  telling you to run `staleness` and letting that fail. The published one-liner
+  `seo-signal init && seo-signal staleness` errored in a fresh directory for
+  exactly this reason — which is the first thing anyone trying the tool does.
+
 ## 0.1.2
 
 Published 2026-09-06. (0.1.1 was tagged in the tree but never reached the

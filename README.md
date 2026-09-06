@@ -8,10 +8,14 @@ No SaaS, no signup, no `node_modules`. Seven commands that each answer one
 question a real site kept getting wrong.
 
 ```bash
-npx seo-signal init         # write a config
+npx seo-signal init         # detects your build output, writes a config
 npx seo-signal staleness    # which page is quietly out of date (no credentials needed)
 npx seo-signal keywords     # queries with demand and no page behind them
 ```
+
+Run it from the root of the site's repo — these commands read the HTML you
+actually ship, not your source files, so build first if your pages are
+generated.
 
 They came out of running [zihin.engineer](https://zihin.engineer) for a year and
 repeatedly discovering that the dashboard could not see the thing that was

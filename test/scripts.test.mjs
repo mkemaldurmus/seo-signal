@@ -238,6 +238,38 @@ test('init writes a config once and refuses to clobber it', () => {
   }
 })
 
+test('init detects a content directory that actually has pages', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'seo-signal-init-'))
+  try {
+    cpSync(FIXTURE_SITE, path.join(dir, 'dist'), { recursive: true })
+    const res = spawnSync('node', [path.join(ROOT, 'bin', 'seo-signal.mjs'), 'init'], {
+      encoding: 'utf8', cwd: dir, env: { ...process.env },
+    })
+    assert.match(res.stderr, /contentDir: dist\//)
+    const cfg = JSON.parse(readFileSync(path.join(dir, 'seo-signal.config.json'), 'utf8'))
+    assert.equal(cfg.contentDir, 'dist')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('init does not promise a command that will fail when there is no HTML', () => {
+  // The published one-liner `seo-signal init && seo-signal staleness` errored
+  // in an empty directory because init wrote contentDir "public" regardless
+  // and then told you to run staleness. It must say what is wrong instead.
+  const dir = mkdtempSync(path.join(tmpdir(), 'seo-signal-bare-'))
+  try {
+    const res = spawnSync('node', [path.join(ROOT, 'bin', 'seo-signal.mjs'), 'init'], {
+      encoding: 'utf8', cwd: dir, env: { ...process.env },
+    })
+    assert.match(res.stderr, /No HTML found/)
+    assert.match(res.stderr, /placeholder/)
+    assert.doesNotMatch(res.stderr, /Try this now/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('an unknown command exits non-zero and shows usage', () => {
   try {
     runBin(['nope'])
