@@ -1,5 +1,7 @@
 # seo-signal
 
+[![test](https://github.com/mkemaldurmus/seo-signal/actions/workflows/test.yml/badge.svg)](https://github.com/mkemaldurmus/seo-signal/actions/workflows/test.yml)
+
 Zero-dependency SEO scripts for sites whose pages live in a git repo.
 
 No SaaS, no API keys beyond the free ones, no `node_modules`. Seven Node scripts
@@ -163,6 +165,25 @@ never deployed. Compare the response **body**.
 `contents: {submitted: 21, indexed: 0}` does not mean nothing is indexed. Use
 URL Inspection, which is authoritative — it said 12 of 17 at the same moment
 that field said zero.
+
+## Development
+
+```bash
+npm test          # node --test, no install step
+```
+
+The tests run each script as a real subprocess against `fixtures/site/` and
+assert on its output — these are CLIs, so testing them through their actual
+interface catches more than testing exported internals would. CI runs them on
+Node 18 and 22 and fails the build if a dependency ever appears in
+`package.json`.
+
+Contributions welcome, particularly:
+
+- more absolute-claim patterns for `staleness.mjs` (it currently reads English
+  only, and the idea generalises to any language)
+- autocomplete sources beyond Google for `keyword-mine.mjs`
+- a reporter that turns the JSON outputs into something readable
 
 ## Licence
 

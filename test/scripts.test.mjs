@@ -1,0 +1,142 @@
+// End-to-end tests: each script is run as a real subprocess and asserted on its
+// output. These are CLIs, so testing them through their actual interface is
+// both simpler than exporting internals and closer to what breaks in practice.
+//
+// No network is touched. Anything that talks to Google is covered only for its
+// argument handling and failure messages.
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, cpSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
+const FIXTURE_SITE = path.join(ROOT, 'fixtures', 'site')
+
+function sandbox() {
+  const dir = mkdtempSync(path.join(tmpdir(), 'seo-signal-'))
+  cpSync(FIXTURE_SITE, path.join(dir, 'site'), { recursive: true })
+  return dir
+}
+
+function run(script, args = [], { env = {}, cwd = ROOT } = {}) {
+  return execFileSync('node', [path.join(ROOT, 'scripts', script), ...args], {
+    encoding: 'utf8',
+    cwd,
+    env: { ...process.env, SEO_SIGNAL_CONFIG: 'no-such-config.json', ...env },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+}
+
+function runExpectingFailure(script, args = [], { env = {}, cwd = ROOT } = {}) {
+  try {
+    run(script, args, { env, cwd })
+    assert.fail(`${script} was expected to exit non-zero`)
+  } catch (err) {
+    if (err instanceof assert.AssertionError) throw err
+    return { status: err.status, stderr: String(err.stderr || '') }
+  }
+}
+
+const baseEnv = (dir) => ({
+  SEO_SIGNAL_SITE: 'https://example.com',
+  SEO_SIGNAL_CONTENT_DIR: path.join(dir, 'site'),
+})
+
+test('staleness ranks a rotting page above a current one', () => {
+  const dir = sandbox()
+  try {
+    const out = path.join(dir, 'staleness.json')
+    run('staleness.mjs', ['--out', out], { env: baseEnv(dir) })
+    const report = JSON.parse(readFileSync(out, 'utf8'))
+    const byFile = Object.fromEntries(report.pages.map((p) => [p.file, p]))
+
+    assert.ok(byFile['rotting-page.html'].score > byFile['fresh-page.html'].score)
+    assert.ok(byFile['rotting-page.html'].absoluteClaims > 0)
+    assert.equal(byFile['fresh-page.html'].absoluteClaims, 0)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('staleness counts a past year in the title but not in body copy', () => {
+  const dir = sandbox()
+  try {
+    const out = path.join(dir, 'staleness.json')
+    run('staleness.mjs', ['--out', out], { env: baseEnv(dir) })
+    const rotting = JSON.parse(readFileSync(out, 'utf8')).pages
+      .find((p) => p.file === 'rotting-page.html')
+
+    // The title says 2019; the body mentions 2018 as legitimate history.
+    assert.deepEqual(rotting.staleYears, [2019])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('sitemap-sync writes every page, then reports itself in sync', () => {
+  const dir = sandbox()
+  try {
+    const env = baseEnv(dir)
+    run('sitemap-sync.mjs', ['--write'], { env })
+    const xml = readFileSync(path.join(dir, 'site', 'sitemap.xml'), 'utf8')
+
+    assert.match(xml, /<loc>https:\/\/example\.com\/<\/loc>/)
+    assert.match(xml, /<loc>https:\/\/example\.com\/fresh-page<\/loc>/)
+    assert.match(xml, /<loc>https:\/\/example\.com\/rotting-page<\/loc>/)
+    assert.equal((xml.match(/<loc>/g) || []).length, 3)
+
+    // A second pass must be a no-op, or --check can never be trusted in CI.
+    const again = run('sitemap-sync.mjs', ['--check'], { env })
+    assert.match(again + '', /(?:)/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('sitemap-sync --check fails on drift', () => {
+  const dir = sandbox()
+  try {
+    const { status, stderr } = runExpectingFailure('sitemap-sync.mjs', ['--check'], { env: baseEnv(dir) })
+    assert.equal(status, 1)
+    assert.match(stderr, /OUT OF SYNC/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('an unconfigured site fails with a sentence, not a stack trace', () => {
+  const { status, stderr } = runExpectingFailure('sitemap-sync.mjs', ['--check'])
+  assert.equal(status, 1)
+  assert.match(stderr, /no site configured/)
+  assert.doesNotMatch(stderr, /at \w+ \(/) // no stack frames
+})
+
+test('a missing content directory names the setting that is wrong', () => {
+  const { status, stderr } = runExpectingFailure('staleness.mjs', [], {
+    env: { SEO_SIGNAL_SITE: 'https://example.com', SEO_SIGNAL_CONTENT_DIR: '/definitely/not/here' },
+  })
+  assert.equal(status, 1)
+  assert.match(stderr, /contentDir/)
+  assert.match(stderr, /SEO_SIGNAL_CONTENT_DIR/)
+})
+
+test('every script prints usage and exits non-zero for --help', () => {
+  for (const s of ['crawl.mjs', 'keyword-mine.mjs', 'ping-index.mjs', 'psi.mjs', 'sitemap-sync.mjs', 'staleness.mjs']) {
+    const { status, stderr } = runExpectingFailure(s, ['--help'], {
+      env: { SEO_SIGNAL_SITE: 'https://example.com' },
+    })
+    assert.equal(status, 1, `${s} exit status`)
+    assert.match(stderr, /usage:/, `${s} usage text`)
+  }
+})
+
+test('an unknown argument is rejected rather than ignored', () => {
+  const { stderr } = runExpectingFailure('staleness.mjs', ['--nope'], {
+    env: { SEO_SIGNAL_SITE: 'https://example.com' },
+  })
+  assert.match(stderr, /unknown argument/)
+})

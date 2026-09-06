@@ -1,0 +1,33 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 18 is the floor the README promises; 22 is what most people run.
+        node: ['18', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # No install step on purpose: this project has no dependencies, and a
+      # failure here would mean one crept in.
+      - name: Assert zero dependencies
+        run: |
+          node -e '
+            const pkg = require("./package.json");
+            const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+            if (Object.keys(deps).length) {
+              console.error("dependencies found:", Object.keys(deps).join(", "));
+              process.exit(1);
+            }
+            console.log("zero dependencies, as advertised");
+          '
+      - run: node --test test/
