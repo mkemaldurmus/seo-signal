@@ -57,5 +57,15 @@ jobs:
           fi
           echo "publishing $PKG"
 
-      - name: Publish
-        run: npm publish
+      # Tagging a version that is already on the registry should be a no-op, not
+      # a red build. Makes the workflow safe to re-run and safe to tag
+      # retroactively for versions that were published by hand.
+      - name: Publish unless this version is already on the registry
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if npm view "$PKG@$VER" version >/dev/null 2>&1; then
+            echo "$PKG@$VER is already published — nothing to do"
+            exit 0
+          fi
+          npm publish

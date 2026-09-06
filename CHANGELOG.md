@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.1.1
+## 0.1.2
+
+Published 2026-09-06. (0.1.1 was tagged in the tree but never reached the
+registry — a broken local npm auth token swallowed it — so its contents ship
+here.)
 
 - `staleness` explains an empty result instead of printing `0 pages scored` and
   exiting silently. It now reports how many files were skipped as too small,
