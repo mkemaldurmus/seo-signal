@@ -1,0 +1,21 @@
+{
+  "name": "seo-signal",
+  "version": "0.1.0",
+  "description": "Zero-dependency SEO scripts for sites whose pages live in a git repo: keyword-gap mining from autocomplete, content staleness scoring, sitemap sync, and an honest index-ping.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "crawl": "node scripts/crawl.mjs",
+    "keywords": "node scripts/keyword-mine.mjs --out out/keywords.json",
+    "keywords:deep": "node scripts/keyword-mine.mjs --deep --out out/keywords-deep.json",
+    "staleness": "node scripts/staleness.mjs --out out/staleness.json",
+    "sitemap:check": "node scripts/sitemap-sync.mjs --check",
+    "sitemap:write": "node scripts/sitemap-sync.mjs --write",
+    "psi": "node scripts/psi.mjs",
+    "ping": "node scripts/ping-index.mjs",
+    "ping:dry": "node scripts/ping-index.mjs --dry-run"
+  },
+  "keywords": ["seo", "search-console", "sitemap", "indexnow", "keyword-research", "core-web-vitals"],
+  "repository": { "type": "git", "url": "git+https://github.com/mkemaldurmus/seo-signal.git" }
+}

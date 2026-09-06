@@ -1,0 +1,10 @@
+{
+  "site": "https://example.com",
+  "gscProperty": "sc-domain:example.com",
+  "gcpQuotaProject": "my-gcp-project",
+  "contentDir": "public",
+  "brandTerms": ["acme", "acmeapp"],
+  "topicTokens": ["invoice", "invoicing", "billing", "receipt"],
+  "extraFeeds": ["/c/sitemap.xml"],
+  "excludeFromSitemap": ["google-site-verification.html", "terms.html"]
+}

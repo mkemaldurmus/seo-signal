@@ -1,0 +1,4 @@
+node_modules/
+out/
+seo-signal.config.json
+*.log
