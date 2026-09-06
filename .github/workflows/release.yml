@@ -47,6 +47,17 @@ jobs:
       - name: Use an npm that supports trusted publishing
         run: npm install -g npm@latest
 
+      # If a publish fails, this says which side is at fault: an old npm or a
+      # missing OIDC token is ours to fix, everything else is registry config.
+      - name: Trusted-publishing preflight
+        run: |
+          echo "npm $(npm --version)  node $(node --version)"
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "OIDC: id-token available (permissions are correct)"
+          else
+            echo "OIDC: NO id-token — 'permissions: id-token: write' is not taking effect" >&2
+          fi
+
       # Never publish a broken tag. Same suite CI runs on every push.
       - name: Test
         run: node --test
