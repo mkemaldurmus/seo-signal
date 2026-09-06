@@ -1,0 +1,61 @@
+name: release
+
+# Publishes to npm when a v* tag is pushed.
+#
+# Uses npm Trusted Publishing (OIDC), so there is no NPM_TOKEN secret anywhere
+# and no 2FA prompt: npm verifies the workflow's identity directly against the
+# repository. That matters because npm is actively restricting tokens that
+# bypass 2FA for direct publishing, which is the route this would otherwise
+# have taken.
+#
+# One-time setup on npmjs.com, package -> Settings -> Trusted Publisher:
+#   organization/user  mkemaldurmus
+#   repository         seo-signal
+#   workflow filename  release.yml
+#
+# Then releasing is:
+#   npm version patch   # or minor / major — commits and tags
+#   git push --follow-tags
+
+on:
+  push:
+    tags: ['v*']
+  # Lets a release be re-run from the Actions tab if a publish fails halfway.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs a recent npm; the one bundled with Node 22 is
+      # older than the OIDC support.
+      - name: Use an npm that supports trusted publishing
+        run: npm install -g npm@latest
+
+      # Never publish a broken tag. Same suite CI runs on every push.
+      - name: Test
+        run: node --test
+
+      - name: Assert the tag matches package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "tag $GITHUB_REF_NAME does not match package.json version $PKG" >&2
+            exit 1
+          fi
+          echo "publishing $PKG"
+
+      - name: Publish
+        run: npm publish

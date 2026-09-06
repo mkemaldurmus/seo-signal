@@ -203,6 +203,13 @@ interface catches more than testing exported internals would. CI runs them on
 Node 18 and 22 and fails the build if a dependency ever appears in
 `package.json`.
 
+Releases go out from CI on a `v*` tag using npm trusted publishing — no token
+is stored anywhere:
+
+```bash
+npm version patch && git push --follow-tags
+```
+
 Contributions welcome, particularly:
 
 - more absolute-claim patterns for `staleness.mjs` (it currently reads English
