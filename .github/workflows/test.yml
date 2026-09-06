@@ -30,4 +30,7 @@ jobs:
             }
             console.log("zero dependencies, as advertised");
           '
-      - run: node --test test/
+      # Bare `node --test` (auto-discovery) rather than `node --test test/`:
+      # passing a directory only works on newer Node, and 18 tries to load it as
+      # a module. This is the form that works across the matrix.
+      - run: node --test

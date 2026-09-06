@@ -17,7 +17,7 @@
     "psi": "node scripts/psi.mjs",
     "ping": "node scripts/ping-index.mjs",
     "ping:dry": "node scripts/ping-index.mjs --dry-run",
-    "test": "node --test test/"
+    "test": "node --test"
   },
   "keywords": [
     "seo",
