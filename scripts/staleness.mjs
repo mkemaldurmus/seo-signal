@@ -44,13 +44,14 @@ const EXCLUDE = SITEMAP_EXCLUDE
 
 function parseArgs() {
   const args = process.argv.slice(2)
-  const opts = { contentDir: CONTENT_DIR, out: 'out/staleness.json', ageWarnDays: 120 }
+  const opts = { contentDir: CONTENT_DIR, out: 'out/staleness.json', ageWarnDays: 120, minBytes: 1000 }
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--content-dir') opts.contentDir = args[++i]
     else if (args[i] === '--out') opts.out = args[++i]
     else if (args[i] === '--age-warn-days') opts.ageWarnDays = Number(args[++i])
+    else if (args[i] === '--min-bytes') opts.minBytes = Number(args[++i])
     else if (args[i] === '--help' || args[i] === '-h') {
-      console.error(`usage: ${invokedAs('node scripts/staleness.mjs')} [--content-dir <dir>] [--out <json>] [--age-warn-days 120]`)
+      console.error(`usage: ${invokedAs('node scripts/staleness.mjs')} [--content-dir <dir>] [--out <json>] [--age-warn-days 120] [--min-bytes 1000]`)
       process.exit(1)
     } else throw new Error(`unknown argument: ${args[i]}`)
   }
@@ -104,12 +105,16 @@ function main() {
   const currentYear = new Date().getFullYear()
   const now = Date.now()
   const pages = []
+  const skipped = { notHtml: 0, excluded: 0, tooSmall: 0 }
 
   for (const f of readdirSync(opts.contentDir)) {
-    if (!f.endsWith('.html') || EXCLUDE.has(f)) continue
+    if (!f.endsWith('.html')) { skipped.notHtml++; continue }
+    if (EXCLUDE.has(f)) { skipped.excluded++; continue }
     const full = path.join(opts.contentDir, f)
     const html = readFileSync(full, 'utf8')
-    if (html.length < 1000) continue
+    // Stubs, redirect shims and verification files are not content, and
+    // scoring them buries the pages that matter.
+    if (html.length < opts.minBytes) { skipped.tooSmall++; continue }
     const text = visibleText(html)
     const edited = lastEdited(full)
     const ageDays = Math.max(0, Math.round((now - Date.parse(edited)) / 86400000))
@@ -150,6 +155,16 @@ function main() {
   mkdirSync(path.dirname(opts.out), { recursive: true })
   writeFileSync(opts.out, JSON.stringify({ checkedAt: new Date().toISOString(), currentYear, pages }, null, 2))
   console.error(`${pages.length} pages scored -> ${opts.out}`)
+  if (!pages.length) {
+    const seen = skipped.notHtml + skipped.excluded + skipped.tooSmall
+    if (!seen) {
+      console.error(`  ${opts.contentDir}/ is empty — is contentDir pointing at your built pages?`)
+    } else {
+      console.error(`  nothing in ${opts.contentDir}/ qualified: ${skipped.tooSmall} file(s) under ${opts.minBytes} bytes` +
+        `, ${skipped.excluded} excluded by config, ${skipped.notHtml} not .html`)
+      if (skipped.tooSmall) console.error('  raise or lower the floor with --min-bytes if those are real pages')
+    }
+  }
   for (const p of pages.slice(0, 8)) {
     console.error(`  ${String(p.score).padStart(3)}  ${p.file}  (${p.ageDays}d old, ${p.absoluteClaims} absolute claims${p.staleYears.length ? `, years ${p.staleYears.join('/')}` : ''})`)
   }

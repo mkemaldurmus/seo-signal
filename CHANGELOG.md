@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.1.1
+
+- `staleness` explains an empty result instead of printing `0 pages scored` and
+  exiting silently. It now reports how many files were skipped as too small,
+  excluded by config, or not HTML — and says so differently when the directory
+  is simply empty. Found by running the published 0.1.0 package against a stub
+  page, which is exactly the first run a new user gets.
+- The size floor is now `--min-bytes` (default 1000) rather than a constant.
+
+## 0.1.0
 
 First cut, extracted from a year of running one small product site.
 

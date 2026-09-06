@@ -7,7 +7,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdtempSync, cpSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -140,6 +140,46 @@ test('an unknown argument is rejected rather than ignored', () => {
   })
   assert.match(stderr, /unknown argument/)
 })
+
+test('an empty staleness result says why, instead of just "0 pages"', () => {
+  const dir = sandbox()
+  try {
+    // A first run that prints "0 pages scored" and exits 0 tells the user
+    // nothing and reads as a broken tool. Found by running the published
+    // package against a stub page.
+    const { stderr } = runCapturingStderr('staleness.mjs', ['--min-bytes', '100000'], { env: baseEnv(dir) })
+    assert.match(stderr, /0 pages scored/)
+    assert.match(stderr, /under 100000 bytes/)
+    assert.match(stderr, /--min-bytes/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('a genuinely empty content directory is named as such', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'seo-signal-empty-'))
+  try {
+    const { stderr } = runCapturingStderr('staleness.mjs', [], {
+      env: { SEO_SIGNAL_SITE: 'https://example.com', SEO_SIGNAL_CONTENT_DIR: dir },
+    })
+    assert.match(stderr, /is empty/)
+    assert.match(stderr, /contentDir/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// staleness exits 0 even when it has nothing to report, and execFileSync
+// returns only stdout on success — these diagnostics go to stderr, so use
+// spawnSync, which hands back both regardless of exit code.
+function runCapturingStderr(script, args = [], opts = {}) {
+  const res = spawnSync('node', [path.join(ROOT, 'scripts', script), ...args], {
+    encoding: 'utf8',
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, SEO_SIGNAL_CONFIG: 'no-such-config.json', ...(opts.env || {}) },
+  })
+  return { stderr: res.stderr || '', status: res.status }
+}
 
 // --- the bin wrapper -------------------------------------------------------
 

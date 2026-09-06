@@ -1,6 +1,6 @@
 {
   "name": "seo-signal",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Zero-dependency SEO scripts for sites whose pages live in a git repo: keyword-gap mining from autocomplete, content staleness scoring, sitemap sync, and an honest index-ping.",
   "keywords": [
     "seo",
