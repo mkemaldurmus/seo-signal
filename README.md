@@ -5,9 +5,9 @@ Zero-dependency SEO scripts for sites whose pages live in a git repo.
 No SaaS, no API keys beyond the free ones, no `node_modules`. Seven Node scripts
 that each answer one question a real site kept getting wrong.
 
-They came out of running a small product site for a year and repeatedly
-discovering that the dashboard could not see the thing that was actually broken.
-Three of them exist because of a specific, embarrassing miss.
+They came out of running [zihin.engineer](https://zihin.engineer) for a year and
+repeatedly discovering that the dashboard could not see the thing that was
+actually broken. Three of them exist because of a specific, embarrassing miss.
 
 ---
 
