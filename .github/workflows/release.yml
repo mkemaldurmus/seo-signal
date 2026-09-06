@@ -33,10 +33,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Deliberately no registry-url here. setup-node would write an .npmrc
+      # containing //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}, and with
+      # no token secret that becomes a literal placeholder — npm then treats it
+      # as credentials, skips the OIDC exchange entirely, and the publish comes
+      # back as a masked 401 (npm reports it as 404 on an existing package).
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
 
       # Trusted publishing needs a recent npm; the one bundled with Node 22 is
       # older than the OIDC support.
