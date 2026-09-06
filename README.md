@@ -4,8 +4,14 @@
 
 Zero-dependency SEO scripts for sites whose pages live in a git repo.
 
-No SaaS, no API keys beyond the free ones, no `node_modules`. Seven Node scripts
-that each answer one question a real site kept getting wrong.
+No SaaS, no signup, no `node_modules`. Seven commands that each answer one
+question a real site kept getting wrong.
+
+```bash
+npx seo-signal init         # write a config
+npx seo-signal staleness    # which page is quietly out of date (no credentials needed)
+npx seo-signal keywords     # queries with demand and no page behind them
+```
 
 They came out of running [zihin.engineer](https://zihin.engineer) for a year and
 repeatedly discovering that the dashboard could not see the thing that was
@@ -26,10 +32,18 @@ subtracts what your existing pages already cover and ranks what's left by how
 many independent seeds converged on it. A phrase several unrelated seeds all
 point at is a cluster; one that appears once is usually a long-tail accident.
 
-```bash
-node scripts/keyword-mine.mjs --out out/keywords.json
-node scripts/keyword-mine.mjs --deep --out out/keywords-deep.json
+```console
+$ npx seo-signal keywords --deep
+deep mode: 740 expanded prefixes
+mining 740 seeds against 26 pages
+2721 suggestions, 1619 uncovered -> out/keywords-deep.json
+  gap x12  why did my bookmarks disappear
+  gap x6   save articles to read later app
+  gap x5   linkedin saved jobs where to find
+  gap x4   linkedin saved posts exporter
 ```
+
+The number after `x` is how many independent seeds surfaced that phrase.
 
 `--deep` suffixes every seed with a–z and ten question words. Autocomplete only
 returns ~10 completions per prefix, so a bare seed shows you the head of a topic
@@ -56,8 +70,13 @@ are to have rotted, so the re-read is aimed instead of random:
   into a lie.
 - **a past year in the title** — a page announcing its own expiry
 
-```bash
-node scripts/staleness.mjs --out out/staleness.json
+```console
+$ npx seo-signal staleness
+26 pages scored -> out/staleness.json
+   48  can-people-see-your-x-bookmarks.html  (0d old, 15 absolute claims)
+   48  x-bookmarks-disappeared.html          (0d old, 12 absolute claims)
+   32  export-linkedin-saved-posts.html      (0d old,  8 absolute claims)
+   28  search-x-bookmarks.html               (0d old,  5 absolute claims)
 ```
 
 Body text is deliberately excluded from the year check: "X made likes private in
@@ -77,9 +96,12 @@ Almost nothing, and most guides are vague about it. This script is explicit:
 - **IndexNow** covers Bing, Yandex, Seznam and Naver. Google does not
   participate. It is still worth doing; it is just not Google.
 
-```bash
-node scripts/ping-index.mjs --dry-run
-node scripts/ping-index.mjs
+```console
+$ npx seo-signal ping
++3 url(s) from server-rendered feeds
+IndexNow: 200 accepted (28 urls)
+GSC sitemap resubmit: 204 ok (https://example.com/sitemap.xml)
+GSC sitemap resubmit: 204 ok (https://example.com/c/sitemap.xml)
 ```
 
 Generates and manages the IndexNow key, publishes it to your content directory,
@@ -100,14 +122,13 @@ submitted to Search Console at all.
 
 ## Setup
 
-Node 18+. Nothing to install.
+Node 18+. Nothing to install — `npx` fetches it on demand.
 
 ```bash
-git clone https://github.com/mkemaldurmus/seo-signal
-cd seo-signal
-cp seo-signal.config.example.json seo-signal.config.json
-$EDITOR seo-signal.config.json
+npx seo-signal init
 ```
+
+That writes `seo-signal.config.json`:
 
 ```json
 {
@@ -123,7 +144,10 @@ $EDITOR seo-signal.config.json
 ```
 
 Every value also reads from an environment variable (`SEO_SIGNAL_SITE`,
-`SEO_SIGNAL_GSC_PROPERTY`, …) so CI can point the same scripts at staging.
+`SEO_SIGNAL_GSC_PROPERTY`, …) so CI can point the same commands at staging.
+
+Only `staleness`, `sitemap` and `crawl` work with nothing but a config —
+start there. `keywords` needs no credentials either, just network.
 
 Point `contentDir` at the directory holding your static `.html` pages. The
 scripts that need git read it from wherever you run them; outside a checkout
@@ -169,6 +193,7 @@ that field said zero.
 ## Development
 
 ```bash
+git clone https://github.com/mkemaldurmus/seo-signal && cd seo-signal
 npm test          # node --test, no install step
 ```
 

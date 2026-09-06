@@ -2,11 +2,38 @@
   "name": "seo-signal",
   "version": "0.1.0",
   "description": "Zero-dependency SEO scripts for sites whose pages live in a git repo: keyword-gap mining from autocomplete, content staleness scoring, sitemap sync, and an honest index-ping.",
-  "type": "module",
+  "keywords": [
+    "seo",
+    "search-console",
+    "sitemap",
+    "indexnow",
+    "keyword-research",
+    "core-web-vitals"
+  ],
+  "homepage": "https://github.com/mkemaldurmus/seo-signal#readme",
+  "bugs": {
+    "url": "https://github.com/mkemaldurmus/seo-signal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkemaldurmus/seo-signal.git"
+  },
   "license": "MIT",
+  "author": "Kemal Durmus",
+  "type": "module",
   "engines": {
     "node": ">=18"
   },
+  "bin": {
+    "seo-signal": "bin/seo-signal.mjs"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "seo-signal.config.example.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "crawl": "node scripts/crawl.mjs",
     "keywords": "node scripts/keyword-mine.mjs --out out/keywords.json",
@@ -18,17 +45,5 @@
     "ping": "node scripts/ping-index.mjs",
     "ping:dry": "node scripts/ping-index.mjs --dry-run",
     "test": "node --test"
-  },
-  "keywords": [
-    "seo",
-    "search-console",
-    "sitemap",
-    "indexnow",
-    "keyword-research",
-    "core-web-vitals"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mkemaldurmus/seo-signal.git"
   }
 }

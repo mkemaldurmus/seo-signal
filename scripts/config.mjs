@@ -87,3 +87,9 @@ export function requireSite(script) {
   }
   return SITE
 }
+
+// How to spell this command back to the user. The bin wrapper sets
+// SEO_SIGNAL_INVOKED_AS; run a script directly and it falls back to the path.
+export function invokedAs(fallback) {
+  return process.env.SEO_SIGNAL_INVOKED_AS || fallback
+}

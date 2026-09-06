@@ -17,7 +17,7 @@
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
-import { requireSite, SITEMAP_EXCLUDE, CONTENT_DIR, requireContentDir, SITE } from './config.mjs'
+import { requireSite, SITEMAP_EXCLUDE, CONTENT_DIR, requireContentDir, SITE, invokedAs } from './config.mjs'
 
 const BASE = SITE
 // Pages that exist but must never be advertised: search-console verification
@@ -36,7 +36,7 @@ function parseArgs() {
     else if (args[i] === '--public-dir') opts.publicDir = args[++i]
     else if (args[i] === '--topic-map') opts.topicMap = args[++i]
     else if (args[i] === '--help' || args[i] === '-h') {
-      console.error('usage: node scripts/sitemap-sync.mjs [--check|--write] [--public-dir <dir>]')
+      console.error(`usage: ${invokedAs('node scripts/sitemap-sync.mjs')} [--check|--write] [--public-dir <dir>]`)
       process.exit(1)
     } else throw new Error(`unknown argument: ${args[i]}`)
   }

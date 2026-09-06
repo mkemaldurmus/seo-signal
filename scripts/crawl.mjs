@@ -8,7 +8,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
-import { requireSite, host, SITE } from './config.mjs'
+import { requireSite, host, SITE, invokedAs } from './config.mjs'
 
 
 const HOSTNAME = host()
@@ -23,7 +23,7 @@ function parseArgs() {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
     if (keyMap[arg]) opts[keyMap[arg]] = args[++i]
-    else if (arg === '--help' || arg === '-h') { console.error('usage: node scripts/seo/crawl.mjs [--sitemap <xml>] [--out <json>]'); process.exit(1) }
+    else if (arg === '--help' || arg === '-h') { console.error(`usage: ${invokedAs('node scripts/crawl.mjs')} [--sitemap <xml>] [--out <json>]`); process.exit(1) }
     else throw new Error(`unknown argument: ${arg}`)
   }
   return opts

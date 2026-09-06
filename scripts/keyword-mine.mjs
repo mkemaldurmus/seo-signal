@@ -23,7 +23,7 @@
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
-import { CONTENT_DIR, BRAND_TERMS, TOPIC_VOCABULARY, requireContentDir } from './config.mjs'
+import { CONTENT_DIR, BRAND_TERMS, TOPIC_VOCABULARY, requireContentDir, invokedAs } from './config.mjs'
 
 const SUGGEST = 'https://suggestqueries.google.com/complete/search'
 // Autocomplete is not a rate-limited API in any documented sense, but it is
@@ -55,7 +55,7 @@ function parseArgs() {
     else if (args[i] === '--max-seeds') opts.maxSeeds = Number(args[++i])
     else if (args[i] === '--deep') opts.deep = true
     else if (args[i] === '--help' || args[i] === '-h') {
-      console.error('usage: node scripts/keyword-mine.mjs --out <json> [--seed <phrase>] [--max-seeds 40] [--deep]')
+      console.error(`usage: ${invokedAs('node scripts/keyword-mine.mjs')} --out <json> [--seed <phrase>] [--max-seeds 40] [--deep]`)
       process.exit(1)
     } else throw new Error(`unknown argument: ${args[i]}`)
   }

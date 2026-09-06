@@ -9,6 +9,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
+import { invokedAs } from './config.mjs'
 
 const API = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
 
@@ -20,7 +21,7 @@ function parseArgs() {
     if (arg === '--sitemap') opts.sitemap = args[++i]
     else if (arg === '--out') opts.out = args[++i]
     else if (arg === '--strategies') opts.strategies = args[++i].split(',')
-    else if (arg === '--help' || arg === '-h') { console.error('usage: node scripts/seo/psi.mjs [--sitemap <xml>] [--out <json>] [--strategies mobile,desktop]'); process.exit(1) }
+    else if (arg === '--help' || arg === '-h') { console.error(`usage: ${invokedAs('node scripts/psi.mjs')} [--sitemap <xml>] [--out <json>] [--strategies mobile,desktop]`); process.exit(1) }
     else throw new Error(`unknown argument: ${arg}`)
   }
   return opts

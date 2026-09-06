@@ -27,7 +27,7 @@ import { execFileSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
-import { requireSite, host, GSC_PROPERTY, QUOTA_PROJECT, CONTENT_DIR, EXTRA_FEEDS, SITE } from './config.mjs'
+import { requireSite, host, GSC_PROPERTY, QUOTA_PROJECT, CONTENT_DIR, EXTRA_FEEDS, SITE, invokedAs } from './config.mjs'
 
 const BASE = SITE
 const HOST = host()
@@ -48,7 +48,7 @@ function parseArgs() {
     else if (args[i] === '--dry-run') opts.dryRun = true
     else if (args[i] === '--skip-dynamic') opts.skipDynamic = true
     else if (args[i] === '--help' || args[i] === '-h') {
-      console.error('usage: node scripts/seo/ping-index.mjs [--sitemap public/sitemap.xml] [--only-changed <n>] [--skip-dynamic] [--dry-run]')
+      console.error(`usage: ${invokedAs('node scripts/ping-index.mjs')} [--sitemap public/sitemap.xml] [--only-changed <n>] [--skip-dynamic] [--dry-run]`)
       process.exit(1)
     } else throw new Error(`unknown argument: ${args[i]}`)
   }

@@ -37,7 +37,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import os from 'node:os'
 import path from 'node:path'
-import { QUOTA_PROJECT } from './config.mjs'
+import { QUOTA_PROJECT, invokedAs } from './config.mjs'
 
 const METRIC_FIELDS = ['clicks', 'impressions', 'ctr', 'position']
 const SUPPORTED_DIMENSIONS = ['query', 'page', 'date', 'country', 'device', 'searchAppearance']
@@ -86,7 +86,7 @@ function parseArgs() {
 }
 
 function usage() {
-  console.error(`usage: node scripts/gsc-fetch.mjs --site-url <prop> --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --out <csv> [--token-source sa|gcloud] [--key <sa-key.json>] [--dimensions query page]`)
+  console.error(`usage: ${invokedAs('node scripts/gsc-fetch.mjs')} --site-url <prop> --start-date <YYYY-MM-DD> --end-date <YYYY-MM-DD> --out <csv> [--token-source sa|gcloud] [--key <sa-key.json>] [--dimensions query page]`)
   process.exit(1)
 }
 

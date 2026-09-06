@@ -140,3 +140,71 @@ test('an unknown argument is rejected rather than ignored', () => {
   })
   assert.match(stderr, /unknown argument/)
 })
+
+// --- the bin wrapper -------------------------------------------------------
+
+function runBin(args = [], { env = {}, cwd = ROOT } = {}) {
+  return execFileSync('node', [path.join(ROOT, 'bin', 'seo-signal.mjs'), ...args], {
+    encoding: 'utf8',
+    cwd,
+    env: { ...process.env, SEO_SIGNAL_CONFIG: 'no-such-config.json', ...env },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+}
+
+test('the bin lists every command it can dispatch', () => {
+  let out = ''
+  try {
+    runBin()
+  } catch (err) {
+    out = String(err.stderr || '')
+  }
+  for (const c of ['keywords', 'staleness', 'sitemap', 'ping', 'crawl', 'psi', 'gsc', 'init']) {
+    assert.match(out, new RegExp(`\\b${c}\\b`), `${c} missing from usage`)
+  }
+})
+
+test('help text names the command as the user typed it', () => {
+  // Running `seo-signal staleness --help` must not answer with a path into
+  // scripts/ — that is the wrapper leaking.
+  try {
+    runBin(['staleness', '--help'], { env: { SEO_SIGNAL_SITE: 'https://example.com' } })
+    assert.fail('expected --help to exit non-zero')
+  } catch (err) {
+    if (err instanceof assert.AssertionError) throw err
+    assert.match(String(err.stderr), /usage: seo-signal staleness/)
+  }
+})
+
+test('init writes a config once and refuses to clobber it', () => {
+  const dir = sandbox()
+  try {
+    const first = (() => {
+      try { return runBin(['init'], { cwd: dir }) } catch (err) { return String(err.stderr) }
+    })()
+    assert.match(first + '', /(?:)/)
+    const written = JSON.parse(readFileSync(path.join(dir, 'seo-signal.config.json'), 'utf8'))
+    assert.ok('site' in written && 'contentDir' in written)
+
+    try {
+      runBin(['init'], { cwd: dir })
+      assert.fail('second init should exit non-zero')
+    } catch (err) {
+      if (err instanceof assert.AssertionError) throw err
+      assert.match(String(err.stderr), /already exists/)
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('an unknown command exits non-zero and shows usage', () => {
+  try {
+    runBin(['nope'])
+    assert.fail('expected non-zero exit')
+  } catch (err) {
+    if (err instanceof assert.AssertionError) throw err
+    assert.equal(err.status, 1)
+    assert.match(String(err.stderr), /unknown command: nope/)
+  }
+})

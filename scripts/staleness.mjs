@@ -24,7 +24,7 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
-import { SITE, CONTENT_DIR, SITEMAP_EXCLUDE, requireContentDir } from './config.mjs'
+import { SITE, CONTENT_DIR, SITEMAP_EXCLUDE, requireContentDir, invokedAs } from './config.mjs'
 
 // Phrases that assert a platform lacks something. Kept narrow on purpose: a
 // generic negation matcher flags every sentence on every page and the ranking
@@ -50,7 +50,7 @@ function parseArgs() {
     else if (args[i] === '--out') opts.out = args[++i]
     else if (args[i] === '--age-warn-days') opts.ageWarnDays = Number(args[++i])
     else if (args[i] === '--help' || args[i] === '-h') {
-      console.error('usage: node scripts/staleness.mjs [--content-dir <dir>] [--out <json>] [--age-warn-days 120]')
+      console.error(`usage: ${invokedAs('node scripts/staleness.mjs')} [--content-dir <dir>] [--out <json>] [--age-warn-days 120]`)
       process.exit(1)
     } else throw new Error(`unknown argument: ${args[i]}`)
   }
