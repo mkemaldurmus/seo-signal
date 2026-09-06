@@ -164,7 +164,7 @@ Only `gsc-fetch.mjs` and `ping-index.mjs` need it.
 ```bash
 gcloud auth application-default login \
   --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/webmasters
-gcloud auth application-default set-quota-project YOUR_PROJECT
+gcloud auth application-default set-quota-project <your-gcp-project>
 ```
 
 **Run the second command.** `application-default login` clears
