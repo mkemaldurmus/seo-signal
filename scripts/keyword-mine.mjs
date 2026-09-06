@@ -136,6 +136,10 @@ async function main() {
   }
   const pages = buildCoverage(opts.contentDir)
   console.error(`mining ${seeds.length} seeds against ${pages.length} pages`)
+  if (!TOPIC_VOCABULARY.length) {
+    console.error('  no topicTokens configured — keeping every suggestion, so expect')
+    console.error('  neighbouring-market noise. Set topicTokens to your domain vocabulary.')
+  }
 
   // seed count is the signal: a phrase several unrelated seeds converge on is a
   // real cluster, one that only shows up once is usually a long-tail accident.
@@ -144,7 +148,10 @@ async function main() {
     for (const s of await suggest(seed)) {
       if (s === seed) continue
       if (STOPWORDS.some((w) => s.includes(w))) continue
-      if (!TOPIC_TOKENS.some((w) => s.includes(w))) continue
+      // An unset topicTokens must mean "do not filter", not "reject
+      // everything". init writes an empty array, so the strict reading made
+      // the headline command return nothing on a fresh config.
+      if (TOPIC_TOKENS.length && !TOPIC_TOKENS.some((w) => s.includes(w))) continue
       const entry = hits.get(s) || { phrase: s, seeds: new Set() }
       entry.seeds.add(seed)
       hits.set(s, entry)
@@ -169,6 +176,13 @@ async function main() {
   mkdirSync(path.dirname(opts.out), { recursive: true })
   writeFileSync(opts.out, JSON.stringify(result, null, 2))
   console.error(`${rows.length} suggestions, ${gaps.length} uncovered -> ${opts.out}`)
+  if (!rows.length) {
+    console.error('  autocomplete returned nothing usable. Check the seeds are real phrases')
+    console.error(`  (topic-map keywords or --seed), and that ${seeds.length} seed(s) is what you meant.`)
+  } else if (!gaps.length) {
+    console.error('  every suggestion is already covered by an existing page — try --deep')
+    console.error('  for the long tail, or add seeds outside what you have already written.')
+  }
   for (const g of gaps.slice(0, 12)) console.error(`  gap x${g.seedCount}  ${g.phrase}`)
 }
 

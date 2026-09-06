@@ -134,6 +134,14 @@ test('every script prints usage and exits non-zero for --help', () => {
   }
 })
 
+test('empty topicTokens means no filter, not filter everything out', () => {
+  // init writes topicTokens: [], and a strict `some()` on an empty array is
+  // always false — which made the headline command return zero suggestions on
+  // a fresh config. Network-free proxy: assert the guard, not the fetch.
+  const src = readFileSync(path.join(ROOT, 'scripts', 'keyword-mine.mjs'), 'utf8')
+  assert.match(src, /TOPIC_TOKENS\.length && !TOPIC_TOKENS\.some/)
+})
+
 test('an unknown argument is rejected rather than ignored', () => {
   const { stderr } = runExpectingFailure('staleness.mjs', ['--nope'], {
     env: { SEO_SIGNAL_SITE: 'https://example.com' },

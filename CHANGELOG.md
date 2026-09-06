@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.4
+
+- `keywords` returned nothing on a fresh config. `init` writes
+  `topicTokens: []`, and the relevance filter read an empty list as "reject
+  everything" rather than "do not filter". An unset vocabulary now means no
+  filtering, with a note that unfiltered results carry neighbouring-market
+  noise.
+- `keywords` explains a zero result instead of leaving you to guess whether the
+  tool or your seeds are at fault.
+
 ## 0.1.3
 
 - `init` detects your content directory instead of writing `public` and hoping.
